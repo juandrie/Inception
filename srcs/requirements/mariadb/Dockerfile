@@ -1,33 +1,24 @@
 FROM debian:bullseye
 
-#Mettre a jour les paquets et installer MariaDB
 RUN apt-get update \
- && apt-get install -y mariadb-server \
- && apt-get clean \ 
- && rm -rf /var/lib/apt/lists/* \
+    && apt-get install -y mariadb-server \
+                          gettext \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-
-# Copie du fichier de configuration personnalisé dans le répertoire approprié
+# Copie du fichier de configuration personnalisé
 COPY conf/50-server.cnf /etc/mysql/mariadb.conf.d/
 
-# Setup directory for init scripts
-COPY conf/init_db.sql /docker-entrypoint-initdb.d/
+# Copie du script d'initialisation de la base de données
+COPY conf/init.sql /docker-entrypoint-initdb.d/init.sql
 
-# Assurez-vous que le répertoire de MySQL est prêt à être utilisé
-#RUN mkdir -p /var/lib/mysql /var/run/mysqld \
-#    && chown -R mysql:mysql /var/lib/mysql /var/run/mysqld \
-#    && chmod 777 /var/run/mysqld
+# Copie et autorisation du script entrypoint
+COPY conf/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-# Création du répertoire pour les fichiers temporaires de MySQL et attribution des permissions appropriées
-RUN mkdir /run/mysqld && \
-    chown -R mysql:mysql /var/lib/mysql /run/mysqld
+# Création du répertoire run (si nécessaire)
+RUN mkdir -p var/run/mysqld && chown -R mysql:mysql /var/run/mysqld && chmod 755 /var/run/mysqld
 
-# Exposition du port 3306 pour permettre les connexions à la base de données
 EXPOSE 3306
 
-# Script d'entrée modifié (s'il est toujours nécessaire)
-COPY conf/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["mysqld"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

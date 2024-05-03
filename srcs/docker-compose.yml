@@ -1,72 +1,66 @@
- version: "3"
+ version: "3.8"  # Utilisation de la version 3 de Docker Compose
 
- services:
-   nginx:
-     container_name: nginx
-     build:
-      context: requirements/nginx
-      dockerfile: Dockerfile
-     ports:
-       - "443:443"
-     env_file:
-       - .env
-     depends_on:
-       - wordpress
-     volumes: 
-       - wordpress:/var/www/html/
-     restart: always
-     networks:
-       - inception
+ services:  # Définition des services
 
-   wordpress:
-     container_name: wordpress
-     depends_on:
-       - mariadb 
-     build:
-      context: requirements/wordpress
-      dockerfile: Dockerfile
-     expose:
-       - "9000"
-     env_file:
-       - .env
-     volumes:
-       - wordpress:/var/www/html/
-     restart: always
-     networks:
-       - inception
+  mariadb:  # Service de base de données MariaDB
+    container_name: mariadb  # Nom du conteneur
+    image: mariadb  # Utilisation de l'image MariaDB
+    build: ./requirements/mariadb  # Construction personnalisée de l'image à partir du Dockerfile spécifié
+    env_file: .env
+    networks:  # Connexion au réseau "inception"
+      - inception
+    expose:  # Exposition du port 3306
+      - "3306"
+    volumes:  # Montage d'un volume pour stocker les données de la base de données
+      - mariadb:/var/lib/mysql
+    restart: always  # Redémarrage automatique du conteneur en cas d'échec
 
-   mariadb:
-     container_name: mariadb
-     build:
-      context: requirements/mariadb
-      dockerfile: Dockerfile
-     expose:
-       - "3306" 
-     env_file:
-       - .env
-     volumes:
-       - mariadb:/var/lib/mysql
-     restart: always
-     networks:
-       - inception
+  wordpress:  # Service WordPress
+    container_name: wordpress  # Nom du conteneur
+    image: wordpress  # Utilisation de l'image WordPress
+    build: ./requirements/wordpress  # Construction personnalisée de l'image à partir du Dockerfile spécifié
+    networks:  # Connexion au réseau "inception"
+      - inception
+    depends_on:  # Dépendance du service sur le service mariadb pour garantir le démarrage dans le bon ordre
+      - mariadb
+    expose:  # Exposition du port 9000
+      - "9000"
+    volumes:  # Montage d'un volume pour stocker les fichiers WordPress
+      - wordpress:/var/www/html
+    env_file: .env  # Fichier d'environnement pour les variables d'environnement
+    restart: always  # Redémarrage automatique du conteneur en cas d'échec
 
- volumes:
-   wordpress:
-     name: wordpress 
-     driver: local
-     driver_opts:
-      type: bind
-      o: bind
-      device: /home/juandrie/data/wordpress
+  nginx:  # Service Nginx
+    container_name: nginx  # Nom du conteneur
+    image: nginx  # Utilisation de l'image Nginx
+    build: ./requirements/nginx  # Construction personnalisée de l'image à partir du Dockerfile spécifié
+    networks:  # Connexion au réseau "inception"
+      - inception
+    depends_on:  # Dépendance du service sur le service wordpress pour garantir le démarrage dans le bon ordre
+      - wordpress
+    ports:  # Mapping du port 443 du conteneur sur le port 443 de l'hôte
+      - "443:443"
+    volumes:  # Montage d'un volume pour partager les fichiers avec le service WordPress
+      - wordpress:/var/www/html
+    env_file: .env  # Fichier d'environnement pour les variables d'environnement
+    restart: always  # Redémarrage automatique du conteneur en cas d'échec
 
-   mariadb:
-     name: mariadb
-     driver: local
-     driver_opts:
-      type: bind
-      o: bind
-      device: /home/juandrie/data/mariadb 
+ networks:  # Définition du réseau "inception"
+  inception:
+    driver: bridge  # Utilisation du pilote bridge pour le réseau
+    name: inception  # Nom du réseau
+
+ volumes:  # Définition des volumes
+  wordpress:  # Volume pour stocker les fichiers WordPress
+    driver: local  # Utilisation du pilote local pour le volume
+    driver_opts:  # Options spécifiques au pilote
+      type: 'none'  # Type de volume "none"
+      o: 'bind'  # Option de montage "bind"
+      device: '/home/juandrie/data/wordpress'  # Chemin du répertoire de stockage des fichiers WordPress
+  mariadb:  # Volume pour stocker les données de la base de données MariaDB
+    driver: local  # Utilisation du pilote local pour le volume
+    driver_opts:  # Options spécifiques au pilote
+      type: 'none'  # Type de volume "none"
+      o: 'bind'  # Option de montage "bind"
+      device: '/home/juandrie/data/mariadb'  # Chemin du répertoire de stockage des données de MariaDB
  
- networks:
-   inception:
-     driver: bridge
