@@ -31,9 +31,16 @@ fi
 echo "Vérification de l'existence de l'utilisateur WordPress..."
 if ! wp user get "${WP_ADMIN_LOGIN}" --allow-root --field=user_login; then
     echo "Création d'un utilisateur WordPress..."
-    wp user create --allow-root ${WP_ADMIN_LOGIN} ${WP_ADMIN_EMAIL} --role=author --user_pass=${WP_USER_PASSWORD}
+    wp user create --allow-root ${WP_ADMIN_LOGIN} ${WP_ADMIN_EMAIL} --role=author --user_pass=${WP_ADMIN_PASSWORD}
 else
     echo "L'utilisateur WordPress existe déjà."
+fi
+echo "Vérification de l'existence de l'utilisateur secondaire WordPress..."
+if ! wp user get "${WP_USER}" --allow-root --field=user_login; then
+    echo "Création de l'utilisateur secondaire WordPress..."
+    wp user create ${WP_USER} ${WP_USER_EMAIL} --role=author --user_pass=${WP_USER_PASSWORD} --allow-root
+else
+    echo "L'utilisateur secondaire WordPress existe déjà."
 fi
 echo "Démarrage de PHP-FPM..."
 exec /usr/sbin/php-fpm7.4 -F

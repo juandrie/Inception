@@ -4,7 +4,7 @@ envsubst < /docker-entrypoint-initdb.d/init.sql > /docker-entrypoint-initdb.d/in
 
 if [ ! -d "/var/lib/mysql/wordpress" ]; then
     service mariadb start
-    sleep 10       # Attendre que MariaDB soit prêt, peut-être augmenter si nécessaire
+    sleep 10       # Attendre que MariaDB soit prêt
 
     echo "Configuration initiale de la base de données..."
     mysql -u root -p"$MYSQL_ROOT_PASSWORD" -h localhost < /docker-entrypoint-initdb.d/init_new.sql
